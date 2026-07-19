@@ -1,11 +1,11 @@
-multimodal_rag/__pycache__
+agents/__pycache__
+Knowledge/__pycache__
+tools/__pycache__
 .env
 __pycache__
 .claude
 .codeboarding
 CLAUDE.md
-decision-making-course.mp4
-Multimodal RAG.ipynb
 audios
 frames
 chroma_db

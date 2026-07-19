@@ -27,25 +27,37 @@ Runs as a **Gradio web UI** with text and voice input and spoken answers.
 
 ## 🏗️ How it works
 
-```
-   ═══ INPUT ═══                 ═══ CORE ═══                ═══ OUTPUT ═══
+```mermaid
+flowchart TD
+    subgraph IN["🎙️ Input layer"]
+        direction LR
+        mic["🎤 voice"] -->|"Whisper (STT)"| query["text query"]
+        kbd["⌨️ text"] --> query
+    end
 
-  🎤 voice ─▶ Whisper ┐     ┌───────────────────┐     ┌─▶ 🖥️  answer in blue
-              (STT)   ├───▶ │    SUPERVISOR     │ ──▶ ┤
-  ⌨️  text ───────────┘     │ think → pick →    │     └─▶ OpenAI TTS ─▶ 🔊 auto-play
-                            │ observe → repeat  │
-                            └─────────┬─────────┘
-                                      │ dispatches to (and chains)
-                   ┌──────────────────┼──────────────────┐
-                   ▼                  ▼                   ▼
-              ┌─────────┐       ┌──────────┐        ┌─────────┐
-              │ web_news│       │ news_rag │        │   llm   │
-              │DuckDuckGo       │  Chroma  │        │ OpenAI  │
-              │  News   │       │ + OpenAI │        │  chat   │
-              └─────────┘       └──────────┘        └─────────┘
+    query --> sup{{"SUPERVISOR<br/>think → pick agent →<br/>observe → repeat / finish"}}
 
-  Voice wraps the text pipeline on both ends — every turn also works as plain text.
+    sup <-->|"dispatch &amp; chain"| web["web_news<br/>DuckDuckGo"]
+    sup <-->|"dispatch &amp; chain"| rag["news_rag<br/>Chroma + OpenAI"]
+    sup <-->|"dispatch &amp; chain"| llm["llm<br/>OpenAI chat"]
+
+    sup --> answer(["final answer"])
+
+    subgraph OUT["🔊 Output layer"]
+        direction LR
+        answer --> blue["🖥️ shown in blue"]
+        answer -->|"OpenAI TTS"| play["🔊 auto-play"]
+    end
+
+    classDef io fill:#eef4ff,stroke:#1e6fff,color:#12305f;
+    classDef core fill:#1e6fff,stroke:#0b3ea8,color:#ffffff;
+    classDef agent fill:#f5f5f7,stroke:#8a8a8f,color:#1d1d1f;
+    class mic,kbd,query,answer,blue,play io;
+    class sup core;
+    class web,rag,llm agent;
 ```
+
+> Voice wraps the text pipeline on both ends — every turn also works as plain text.
 
 The **supervisor is the only agent** — it holds all the reasoning. The three
 workers are intentionally thin: each does one job in a single shot and returns a
