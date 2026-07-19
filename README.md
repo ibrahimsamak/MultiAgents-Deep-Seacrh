@@ -120,6 +120,7 @@ python3 app.py
 ```
 
 Opens at **http://127.0.0.1:7860** with:
+
 - a text box and a microphone recorder for input,
 - the supervisor's reasoning trace,
 - the answer in blue, plus a voice clip that auto-plays.
@@ -139,28 +140,28 @@ print(build_default_assistant().supervisor.route('What is the latest AI news?'))
 
 ### Try these
 
-| Ask | Routes to |
-|-----|-----------|
-| `What is 25 times 3?` | `llm` (answers directly) |
-| `What is the latest news about SpaceX today?` | `web_news` (live search) |
+| Ask                                                  | Routes to                    |
+| ---------------------------------------------------- | ---------------------------- |
+| `What is 25 times 3?`                                | `llm` (answers directly)     |
+| `What is the latest news about SpaceX today?`        | `web_news` (live search)     |
 | `Tell me EV battery news and explain why it matters` | `news_rag` → `llm` (chained) |
 
 ---
 
 ## 📁 Project structure
 
-| Path | Role |
-|------|------|
-| `Supervisor.py` | The orchestrating agent: plan → dispatch → observe → repeat. |
-| `OpenAILLM.py` | Thin `.invoke(prompt)` wrapper over OpenAI Chat Completions. |
-| `agents/BaseAgent.py` | Abstract base defining the `run(query)` worker contract. |
-| `agents/LLMAgent.py` | General-purpose LLM worker. |
-| `agents/RagAgent.py` | Retrieves from Chroma and answers over the docs. |
-| `agents/SearchAgent.py` | Searches the web and answers over fresh results. |
-| `Knowledge/knowledge_base.py` | Sample news + `build_news_vector_db()` (persisted Chroma). |
-| `tools/search_tools.py` | `DuckDuckGoNewsTool` — free news search, fails soft. |
-| `VoiceAssistant.py` | Whisper/TTS speech helpers and `build_default_assistant()` wiring. |
-| `app.py` | Gradio web UI — the runnable entry point. |
+| Path                          | Role                                                               |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `Supervisor.py`               | The orchestrating agent: plan → dispatch → observe → repeat.       |
+| `OpenAILLM.py`                | Thin `.invoke(prompt)` wrapper over OpenAI Chat Completions.       |
+| `agents/BaseAgent.py`         | Abstract base defining the `run(query)` worker contract.           |
+| `agents/LLMAgent.py`          | General-purpose LLM worker.                                        |
+| `agents/RagAgent.py`          | Retrieves from Chroma and answers over the docs.                   |
+| `agents/SearchAgent.py`       | Searches the web and answers over fresh results.                   |
+| `Knowledge/knowledge_base.py` | Sample news + `build_news_vector_db()` (persisted Chroma).         |
+| `tools/search_tools.py`       | `DuckDuckGoNewsTool` — free news search, fails soft.               |
+| `VoiceAssistant.py`           | Whisper/TTS speech helpers and `build_default_assistant()` wiring. |
+| `app.py`                      | Gradio web UI — the runnable entry point.                          |
 
 Run commands from the project root so the `agents/`, `Knowledge/`, and `tools/` packages resolve.
 
@@ -175,12 +176,3 @@ Run commands from the project root so the `agents/`, `Knowledge/`, and `tools/` 
   search tool) in its constructor. An `llm` is anything with `.invoke(prompt) -> str`.
 - **Persistence:** the Chroma store is written to `./chroma_db` on first run and
   reused afterward (no re-embedding).
-
----
-
-## ⚠️ Notes & limitations
-
-- **DuckDuckGo** has no official API and rate-limits bursts of requests;
-  occasional empty results are expected and handled gracefully.
-- **`news_rag`** answers from a small built-in sample dataset — it's a demo
-  corpus, not comprehensive. Use `web_news` for genuinely current events.
