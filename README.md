@@ -1,4 +1,4 @@
-# 🧠 Multi-Agent Supervisor Assistant
+# Multi-Agent Supervisor Assistant
 
 A text- and voice-driven assistant where an **LLM supervisor** reasons about each
 request, plans, and dispatches it to the right specialist agent — live web-news
@@ -9,13 +9,15 @@ Runs as a **Gradio web UI** with text and voice input and spoken answers.
 
 ---
 
-## ✨ Features
+## Features
 
 - **Supervisor orchestration** — an LLM plans, picks the next agent, observes the
   result, and either calls another agent or finishes. Multi-step and self-synthesizing.
-- **Three specialist agents**
+- **Four specialist agents**
   - `web_news` — live, up-to-the-minute news via DuckDuckGo (no API key).
   - `news_rag` — retrieval-augmented answers over a local Chroma vector database.
+  - `product_shopper` — a LangChain tool-calling agent that searches for a
+    product, compares prices, and converts the cheapest to Canadian dollars.
   - `llm` — general reasoning, explanations, and math.
 - **Text or voice** — type a message or speak it (Whisper transcription).
 - **Spoken answers** — the answer is rendered in blue **and** synthesized to
@@ -25,7 +27,7 @@ Runs as a **Gradio web UI** with text and voice input and spoken answers.
 
 ---
 
-## 🏗️ How it works
+## How it works
 
 <p align="center">
   <img src="docs/architecture.svg" alt="Architecture: voice input → supervisor → agents → voice/text output" width="720">
@@ -33,47 +35,12 @@ Runs as a **Gradio web UI** with text and voice input and spoken answers.
 
 > Voice wraps the text pipeline on both ends — every turn also works as plain text.
 
-<details>
-<summary>Diagram source (Mermaid) — edit and re-render with <code>mermaid-cli</code></summary>
-
-```mermaid
-flowchart TD
-    subgraph IN["Input layer"]
-        direction LR
-        mic["🎤 voice"] -->|"Whisper (STT)"| query["text query"]
-        kbd["⌨️ text"] --> query
-    end
-
-    query --> sup{{"SUPERVISOR<br/>think → pick agent →<br/>observe → repeat / finish"}}
-
-    sup <-->|"dispatch &amp; chain"| web["web_news<br/>DuckDuckGo"]
-    sup <-->|"dispatch &amp; chain"| rag["news_rag<br/>Chroma + OpenAI"]
-    sup <-->|"dispatch &amp; chain"| llm["llm<br/>OpenAI chat"]
-
-    sup --> answer(["final answer"])
-
-    subgraph OUT["Output layer"]
-        direction LR
-        answer --> blue["🖥️ shown in blue"]
-        answer -->|"OpenAI TTS"| play["🔊 auto-play"]
-    end
-
-    classDef io fill:#eef4ff,stroke:#1e6fff,color:#12305f;
-    classDef core fill:#1e6fff,stroke:#0b3ea8,color:#ffffff;
-    classDef agent fill:#f5f5f7,stroke:#8a8a8f,color:#1d1d1f;
-    class mic,kbd,query,answer,blue,play io;
-    class sup core;
-    class web,rag,llm agent;
-```
-
-Regenerate: `npx @mermaid-js/mermaid-cli -i docs/architecture.mmd -o docs/architecture.svg -b transparent`
-
-</details>
-
-The **supervisor is the only agent** — it holds all the reasoning. The three
-workers are intentionally thin: each does one job in a single shot and returns a
-string. This keeps them cheap, predictable, and easy to test, while all the
-decision-making stays in one auditable place.
+The **supervisor holds the top-level reasoning**. Three of its workers
+(`web_news`, `news_rag`, `llm`) are intentionally thin — each does one job in a
+single shot and returns a string. The fourth, `product_shopper`, is itself a
+LangChain tool-calling agent, because its job genuinely needs multi-step tool
+use (search → compare prices → convert to CAD). Keeping the rest thin makes them
+cheap, predictable, and easy to test, with routing decisions in one auditable place.
 
 Routing is driven by each agent's **description** (registered in
 `build_default_assistant()`), which the supervisor reads to choose — not by
@@ -81,7 +48,7 @@ hard-coded keywords.
 
 ---
 
-## 🎙️ Voice layer
+## Voice layer
 
 Voice wraps the text pipeline on both ends (see the diagram above), so speech is
 fully optional — every turn works with plain text too.
@@ -102,7 +69,19 @@ the OpenAI API.
 
 ---
 
-## 🚀 Setup
+## Demo
+
+Live web-news lookup — voice/text in, answer in blue with a spoken clip:
+
+![Web UI answering a live price query via the web_news agent](docs/demo1.png)
+
+The `product_shopper` agent — searches, compares prices, and converts the cheapest to CAD:
+
+![Web UI shopping for an iPhone via the product_shopper agent](docs/demo2.png)
+
+---
+
+## Setup
 
 Requires **Python 3.12** and an OpenAI API key.
 
@@ -122,7 +101,7 @@ TTS. No key is needed for DuckDuckGo news search.
 
 ---
 
-## ▶️ Usage
+## Usage
 
 ### Web UI
 
@@ -151,34 +130,37 @@ print(build_default_assistant().supervisor.route('What is the latest AI news?'))
 
 ### Try these
 
-| Ask                                                  | Routes to                    |
-| ---------------------------------------------------- | ---------------------------- |
-| `What is 25 times 3?`                                | `llm` (answers directly)     |
-| `What is the latest news about SpaceX today?`        | `web_news` (live search)     |
-| `Tell me EV battery news and explain why it matters` | `news_rag` → `llm` (chained) |
+| Ask                                                  | Routes to                                      |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| `What is 25 times 3?`                                | `llm` (answers directly)                       |
+| `What is the latest news about SpaceX today?`        | `web_news` (live search)                       |
+| `Tell me EV battery news and explain why it matters` | `news_rag` → `llm` (chained)                   |
+| `Cheapest Sony WH-1000XM5 headphones in CAD?`        | `product_shopper` (search → compare → convert) |
 
 ---
 
-## 📁 Project structure
+## Project structure
 
-| Path                          | Role                                                               |
-| ----------------------------- | ------------------------------------------------------------------ |
-| `Supervisor.py`               | The orchestrating agent: plan → dispatch → observe → repeat.       |
-| `OpenAILLM.py`                | Thin `.invoke(prompt)` wrapper over OpenAI Chat Completions.       |
-| `agents/BaseAgent.py`         | Abstract base defining the `run(query)` worker contract.           |
-| `agents/LLMAgent.py`          | General-purpose LLM worker.                                        |
-| `agents/RagAgent.py`          | Retrieves from Chroma and answers over the docs.                   |
-| `agents/SearchAgent.py`       | Searches the web and answers over fresh results.                   |
-| `Knowledge/knowledge_base.py` | Sample news + `build_news_vector_db()` (persisted Chroma).         |
-| `tools/search_tools.py`       | `DuckDuckGoNewsTool` — free news search, fails soft.               |
-| `VoiceAssistant.py`           | Whisper/TTS speech helpers and `build_default_assistant()` wiring. |
-| `app.py`                      | Gradio web UI — the runnable entry point.                          |
+| Path                          | Role                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------- |
+| `Supervisor.py`               | The orchestrating agent: plan → dispatch → observe → repeat.                      |
+| `OpenAILLM.py`                | Thin `.invoke(prompt)` wrapper over OpenAI Chat Completions.                      |
+| `agents/BaseAgent.py`         | Abstract base defining the `run(query)` worker contract.                          |
+| `agents/LLMAgent.py`          | General-purpose LLM worker.                                                       |
+| `agents/RagAgent.py`          | Retrieves from Chroma and answers over the docs.                                  |
+| `agents/SearchAgent.py`       | Searches the web and answers over fresh results.                                  |
+| `agents/ProductAgent.py`      | LangChain (`create_agent`) tool-calling agent: search → compare → convert to CAD. |
+| `Knowledge/knowledge_base.py` | Sample news + `build_news_vector_db()` (persisted Chroma).                        |
+| `tools/search_tools.py`       | `DuckDuckGoNewsTool` — free news search, fails soft.                              |
+| `tools/product_tools.py`      | Product search + LangChain tools `compare_prices` & `convert_to_cad`.             |
+| `VoiceAssistant.py`           | Whisper/TTS speech helpers and `build_default_assistant()` wiring.                |
+| `app.py`                      | Gradio web UI — the runnable entry point.                                         |
 
 Run commands from the project root so the `agents/`, `Knowledge/`, and `tools/` packages resolve.
 
 ---
 
-## 🧩 Architecture notes
+## Architecture notes
 
 - **Adding an agent:** implement `run(query) -> str`, then register it in
   `build_default_assistant()` with a clear `description` — that description is
@@ -187,3 +169,8 @@ Run commands from the project root so the `agents/`, `Knowledge/`, and `tools/` 
   search tool) in its constructor. An `llm` is anything with `.invoke(prompt) -> str`.
 - **Persistence:** the Chroma store is written to `./chroma_db` on first run and
   reused afterward (no re-embedding).
+- **`product_shopper` is a LangChain agent** (`langchain.agents.create_agent`
+  over `ChatOpenAI`), not a thin worker — it drives two LangChain tools,
+  `compare_prices` and `convert_to_cad`. It parses prices from live web-search
+  snippets (often sparse) and converts with **fixed demo FX rates**, so treat
+  its numbers as illustrative, not authoritative.

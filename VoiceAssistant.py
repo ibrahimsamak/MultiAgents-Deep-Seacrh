@@ -9,7 +9,9 @@ from OpenAILLM import OpenAILLM
 from agents.RagAgent import RagAgent
 from Supervisor import Supervisor
 from agents.SearchAgent import SearchAgent
+from agents.ProductAgent import ProductAgent
 from tools.search_tools import DuckDuckGoNewsTool
+from tools.product_tools import DuckDuckGoProductSearch
 
 
 class VoiceAssistant:
@@ -59,6 +61,7 @@ def build_default_assistant():
     llm_agent = LLMAgent(llm)
     rag_agent = RagAgent(build_news_vector_db(), llm=llm)
     search_agent = SearchAgent(DuckDuckGoNewsTool(), llm=llm)
+    product_agent = ProductAgent(DuckDuckGoProductSearch())
 
     agents = [
         {
@@ -78,6 +81,16 @@ def build_default_assistant():
                 "stale; prefer web_news for genuinely recent events."
             ),
             "agent": rag_agent,
+        },
+        {
+            "name": "product_shopper",
+            "description": (
+                "Searches the web for a product, compares prices across listings, "
+                "picks the cheapest, and converts that price to Canadian dollars "
+                "(CAD). Use for shopping and 'cheapest'/'best price'/'how much"
+                "'/'price in CAD' questions about a product to buy."
+            ),
+            "agent": product_agent,
         },
         {
             "name": "llm",

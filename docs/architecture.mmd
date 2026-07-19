@@ -9,7 +9,11 @@ flowchart TD
 
     sup <-->|"dispatch &amp; chain"| web["web_news<br/>DuckDuckGo"]
     sup <-->|"dispatch &amp; chain"| rag["news_rag<br/>Chroma + OpenAI"]
+    sup <-->|"dispatch &amp; chain"| shop["product_shopper<br/>LangChain tool-calling"]
     sup <-->|"dispatch &amp; chain"| llm["llm<br/>OpenAI chat"]
+
+    shop -.->|tool| cmp["compare_prices<br/>pick cheapest"]
+    shop -.->|tool| cad["convert_to_cad<br/>fixed FX rates"]
 
     sup --> answer(["final answer"])
 
@@ -22,6 +26,8 @@ flowchart TD
     classDef io fill:#eef4ff,stroke:#1e6fff,color:#12305f;
     classDef core fill:#1e6fff,stroke:#0b3ea8,color:#ffffff;
     classDef agent fill:#f5f5f7,stroke:#8a8a8f,color:#1d1d1f;
+    classDef tool fill:#fff7e6,stroke:#d9931f,color:#5a3c00;
     class mic,kbd,query,answer,blue,play io;
     class sup core;
-    class web,rag,llm agent;
+    class web,rag,shop,llm agent;
+    class cmp,cad tool;

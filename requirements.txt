@@ -11,5 +11,9 @@ langchain-core==1.4.9
 # Web news search (free, no API key)
 ddgs==9.14.4
 
+# product_shopper agent (LangChain tool-calling)
+langchain==1.0.5
+langgraph==1.0.7
+
 # Web UI (also handles mic capture + audio playback in the browser)
 gradio==6.12.0
