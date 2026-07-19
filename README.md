@@ -27,9 +27,18 @@ Runs as a **Gradio web UI** with text and voice input and spoken answers.
 
 ## 🏗️ How it works
 
+<p align="center">
+  <img src="docs/architecture.svg" alt="Architecture: voice input → supervisor → agents → voice/text output" width="720">
+</p>
+
+> Voice wraps the text pipeline on both ends — every turn also works as plain text.
+
+<details>
+<summary>Diagram source (Mermaid) — edit and re-render with <code>mermaid-cli</code></summary>
+
 ```mermaid
 flowchart TD
-    subgraph IN["🎙️ Input layer"]
+    subgraph IN["Input layer"]
         direction LR
         mic["🎤 voice"] -->|"Whisper (STT)"| query["text query"]
         kbd["⌨️ text"] --> query
@@ -43,7 +52,7 @@ flowchart TD
 
     sup --> answer(["final answer"])
 
-    subgraph OUT["🔊 Output layer"]
+    subgraph OUT["Output layer"]
         direction LR
         answer --> blue["🖥️ shown in blue"]
         answer -->|"OpenAI TTS"| play["🔊 auto-play"]
@@ -57,7 +66,9 @@ flowchart TD
     class web,rag,llm agent;
 ```
 
-> Voice wraps the text pipeline on both ends — every turn also works as plain text.
+Regenerate: `npx @mermaid-js/mermaid-cli -i docs/architecture.mmd -o docs/architecture.svg -b transparent`
+
+</details>
 
 The **supervisor is the only agent** — it holds all the reasoning. The three
 workers are intentionally thin: each does one job in a single shot and returns a
