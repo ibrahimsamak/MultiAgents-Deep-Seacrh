@@ -4,9 +4,7 @@ A text- and voice-driven assistant where an **LLM supervisor** reasons about eac
 request, plans, and dispatches it to the right specialist agent — live web-news
 search, RAG over a local news database, or a general-purpose LLM — chaining them
 across multiple steps when a question needs more than one.
-
 Runs as a **Gradio web UI** with text and voice input and spoken answers.
-
 ---
 
 ## Features
