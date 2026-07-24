@@ -3,7 +3,7 @@ name: Deploy RAG to ECS
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
