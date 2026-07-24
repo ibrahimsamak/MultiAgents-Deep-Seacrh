@@ -3,7 +3,11 @@ name: Deploy RAG to ECS
 on:
   push:
     branches:
-      - master
+      - main
+
+env:
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+  IMAGE_NAME: ${{ secrets.ECR_REPOSITORY }}
 
 jobs:
   deploy:
@@ -12,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: aws-actions/configure-aws-credentials@v5
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -20,23 +24,20 @@ jobs:
 
       - uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image
-        env:
-          REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
-        run: |
-          docker build -t "$REGISTRY:${{ github.sha }}" -t "$REGISTRY:latest" .
-          docker push "$REGISTRY:${{ github.sha }}"
-          docker push "$REGISTRY:latest"
+      - name: Build Docker Image
+        run: docker build -t $IMAGE_NAME:latest .
 
-      - name: Trigger ECS deployment
+      - name: Tag Image
+        run: |
+          docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
+
+      - name: Push Image
+        run: |
+          docker push $ECR_REGISTRY/$IMAGE_NAME:latest
+
+      - name: Deploy to ECS
         run: |
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER }} \
             --service ${{ secrets.ECS_SERVICE }} \
             --force-new-deployment
-
-      - name: Wait for the deployment to stabilize
-        run: |
-          aws ecs wait services-stable \
-            --cluster ${{ secrets.ECS_CLUSTER }} \
-            --service ${{ secrets.ECS_SERVICE }}
