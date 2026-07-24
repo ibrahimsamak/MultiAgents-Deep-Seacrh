@@ -20,22 +20,29 @@ jobs:
 
       - uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker Image
-        run: docker build -t rag-agent .
-
-      - name: Tag Image
+      # One image built per commit, tagged with both the git SHA (immutable,
+      # for audit + rollback) and :latest (what the task definition points at).
+      - name: Build, tag, and push image
+        env:
+          REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}
         run: |
-          docker tag rag-agent:latest \
-          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+          docker build -t "$REGISTRY:${{ github.sha }}" -t "$REGISTRY:latest" .
+          docker push "$REGISTRY:${{ github.sha }}"
+          docker push "$REGISTRY:latest"
 
-      - name: Push Image
-        run: |
-          docker push \
-          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
-
-      - name: Deploy to ECS
+      # Force a rolling deployment. On Fargate this always re-pulls :latest,
+      # so the new image goes live.
+      - name: Trigger ECS deployment
         run: |
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER }} \
             --service ${{ secrets.ECS_SERVICE }} \
             --force-new-deployment
+
+      # update-service returns immediately; this blocks until the new task is
+      # running and healthy (or fails), so a green run means the change is live.
+      - name: Wait for the deployment to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ secrets.ECS_CLUSTER }} \
+            --service ${{ secrets.ECS_SERVICE }}
