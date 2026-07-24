@@ -54,3 +54,16 @@ Some questions to try:
 - "What is the latest news about SpaceX today?" -> web_news
 - "Tell me EV battery news and explain why it matters" -> news_rag then llm
 - "Cheapest iPhone 15 price in CAD" -> product_shopper
+
+## Docker
+
+```bash
+docker build -t multi-agents .
+docker run --rm -p 7860:7860 --env-file .env -v multi-agents-chroma:/app/chroma_db multi-agents
+```
+
+## Deploy
+
+Every push to `master` triggers `.github/workflows/deploy.yml`. It builds the image for linux/arm64 (my ECS task runs on ARM, so the build goes through QEMU + buildx), pushes it to ECR, and forces a new deployment of the ECS service.
+
+Secrets needed in the repo: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_ACCOUNT_ID`, `ECR_REPOSITORY`, `ECS_CLUSTER`, `ECS_SERVICE`.
