@@ -8,6 +8,5 @@ __pycache__
 CLAUDE.md
 audios
 frames
-chroma_db
 .gradio
 .vscode/

@@ -1,0 +1,23 @@
+# Secrets — never bake into the image; pass at runtime with --env-file
+.env
+
+# Python caches
+__pycache__
+**/__pycache__
+*.pyc
+
+# Persisted / generated data — mount as a volume instead of copying in
+chroma_db
+.gradio
+audios
+frames
+
+# Tooling & VCS — not needed at runtime
+.git
+.gitignore
+.vscode
+.claude
+.codeboarding
+Dockerfile
+.dockerignore
+README.md

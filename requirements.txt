@@ -1,19 +1,22 @@
 # Core LLM + orchestration
-openai==2.32.0
+openai==2.45.0   # langchain-openai 1.4.0 requires openai>=2.45.0
 python-dotenv==1.2.1
 
 # RAG: Chroma vector store + OpenAI embeddings
 chromadb==1.3.4
 langchain-chroma==1.0.0
-langchain-openai==1.0.2
-langchain-core==1.4.9
+langchain-openai==1.4.0
+langchain-core==1.5.0
 
 # Web news search (free, no API key)
 ddgs==9.14.4
 
 # product_shopper agent (LangChain tool-calling)
-langchain==1.0.5
-langgraph==1.0.7
+# NOTE: keep these four in sync — langgraph-prebuilt needs ExecutionInfo from
+# langgraph>=1.1.10, which langchain 1.0.x forbade (caused an ImportError).
+langchain==1.3.14
+langgraph==1.2.9
+langgraph-prebuilt==1.1.0
 
 # Web UI (also handles mic capture + audio playback in the browser)
 gradio==6.12.0
