@@ -59,7 +59,7 @@ def respond(text, audio):
 
 with gr.Blocks(title="Multi-Agent Supervisor!!") as demo:
     gr.Markdown(
-        "# Multi-Agent Searcher\n"
+        "# Multi-Agent Searcher !!\n"
         "Type a message or record your voice. The supervisor plans, picks the "
         "right agent(s), and answers."
     )
