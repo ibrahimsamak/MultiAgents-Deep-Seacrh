@@ -57,7 +57,7 @@ def respond(text, audio):
     return query, _trace_html(trace), _answer_html(answer), voice_path
 
 
-with gr.Blocks(title="Multi-Agent Supervisor") as demo:
+with gr.Blocks(title="Multi-Agent Supervisor!!") as demo:
     gr.Markdown(
         "# Multi-Agent Searcher\n"
         "Type a message or record your voice. The supervisor plans, picks the "
